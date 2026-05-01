@@ -470,12 +470,11 @@ export default function App() {
           description: "" 
         }));
 
-        // Augment with high quality images and variants
+        // Augment with variants grouping while keeping API images
         mappedItems = mappedItems.map(item => {
           if (item.name.includes("Dondurma (Top)")) {
             return {
               ...item,
-              image: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=1000&auto=format&fit=crop',
               description: "Eşref Usta'nın meşhur dondurmaları. İstediğiniz aromayı seçin.",
               variants: [
                 { name: "Sade Maraş", image: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=400&auto=format&fit=crop" },
@@ -485,15 +484,6 @@ export default function App() {
                 { name: "Limonlu", image: "https://images.unsplash.com/photo-1534706936160-d5ee67733576?w=400&auto=format&fit=crop" }
               ]
             };
-          }
-          if (item.name.includes("Kağıt Helva")) {
-            item.image = 'https://images.unsplash.com/photo-1588619183416-562ec877e8be?w=1000&auto=format&fit=crop';
-          }
-          if (item.name.includes("Sütlaç")) {
-            item.image = 'https://images.unsplash.com/photo-1544787210-282aa5bc5196?w=1000&auto=format&fit=crop';
-          }
-          if (item.name.includes("Çiğköfte")) {
-            item.image = 'https://images.unsplash.com/photo-1632733711679-5292d60677a2?w=1000&auto=format&fit=crop';
           }
           if (item.name.includes("Oralet")) {
             return {
