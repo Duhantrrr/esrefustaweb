@@ -1,16 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Menu, 
+  Menu as MenuIcon, 
   Search, 
   ShoppingBasket, 
   Languages, 
   Share2, 
   PhoneCall, 
   Plus, 
+  Minus,
   X,
   ChevronRight,
-  Loader2
+  Loader2,
+  Settings,
+  Trash2,
+  Edit2,
+  Check,
+  ArrowLeft
 } from 'lucide-react';
 
 // --- Types ---
@@ -25,6 +31,10 @@ interface MenuItem {
   variants?: { name: string; image: string }[];
 }
 
+interface CartItem extends MenuItem {
+  quantity: number;
+}
+
 interface ApiItem {
   _id: string;
   ad: string;
@@ -35,23 +45,48 @@ interface ApiItem {
 
 // --- Components ---
 
-function TopAppBar() {
+function TopAppBar({ 
+  onMenuClick, 
+  onAdminClick, 
+  isAdmin 
+}: { 
+  onMenuClick: () => void; 
+  onAdminClick: () => void;
+  isAdmin: boolean;
+}) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/90 backdrop-blur-md border-b border-zinc-100 flex items-center justify-between px-5 shadow-sm">
-      <button className="p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500">
-        <Menu size={24} />
+      <button 
+        onClick={onMenuClick}
+        className="p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500"
+      >
+        <MenuIcon size={24} />
       </button>
       <span className="font-display font-black text-xl tracking-tight text-brand-primary">
         Eşref Usta Dondurma
       </span>
-      <button className="p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500">
-        <Languages size={24} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button 
+          onClick={onAdminClick}
+          className={`p-2 rounded-full transition-colors ${isAdmin ? 'text-brand-primary bg-brand-primary/10' : 'text-zinc-500 hover:bg-brand-primary/5'}`}
+        >
+          <Settings size={22} />
+        </button>
+        <button className="p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500">
+          <Languages size={22} />
+        </button>
+      </div>
     </header>
   );
 }
 
-function ProductCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
+function ProductCard({ 
+  item, 
+  onAdd 
+}: { 
+  item: MenuItem; 
+  onAdd: (item: MenuItem) => void;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -70,16 +105,14 @@ function ProductCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
           loading="lazy"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute top-3 right-3 bg-brand-primary-container text-brand-on-primary-container px-3 py-1 rounded-lg font-semibold text-sm shadow-sm">
+        <div className="absolute top-3 right-3 bg-brand-primary text-white px-3 py-1 rounded-lg font-bold text-sm shadow-md">
           {item.price} TL
         </div>
       </div>
       <div className="p-5">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-display font-bold text-xl text-brand-on-surface">
-            {item.name}
-          </h3>
-        </div>
+        <h3 className="font-display font-bold text-xl text-brand-on-surface mb-2">
+          {item.name}
+        </h3>
         
         {item.description && (
           <p className="font-sans text-brand-on-surface-variant text-sm leading-relaxed mb-4 line-clamp-2">
@@ -89,8 +122,8 @@ function ProductCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
 
         <div className="flex gap-3 mt-4">
           <button 
-            onClick={onAdd}
-            className="flex-1 bg-brand-primary text-white font-semibold py-3 rounded-full flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-md hover:bg-brand-primary/90"
+            onClick={() => onAdd(item)}
+            className="flex-1 bg-brand-primary text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-md hover:shadow-lg"
           >
             <Plus size={18} />
             <span>Ekle</span>
@@ -99,17 +132,16 @@ function ProductCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
           {item.variants && item.variants.length > 0 && (
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="px-4 py-3 rounded-full border border-brand-outline/20 text-brand-primary font-bold text-sm flex items-center gap-2 hover:bg-brand-surface-container transition-colors"
+              className="px-4 py-3 rounded-xl border border-brand-outline/20 text-brand-primary font-bold text-xs flex items-center gap-1 hover:bg-brand-surface-container transition-colors"
             >
-              <span>{isExpanded ? 'Seç' : 'Çeşitleri Gör'}</span>
+              <span>{isExpanded ? 'Kapat' : 'Çeşitler'}</span>
               <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
-                <ChevronRight size={16} />
+                <ChevronRight size={14} />
               </motion.div>
             </button>
           )}
         </div>
 
-        {/* Variants Expansion */}
         <AnimatePresence>
           {isExpanded && item.variants && (
             <motion.div 
@@ -119,19 +151,17 @@ function ProductCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
               className="overflow-hidden"
             >
               <div className="pt-6 mt-6 border-t border-brand-surface-container space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-outline mb-2">Mevcut Çeşitler</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-outline mb-2">Lezzet Seçenekleri</p>
                 <div className="grid grid-cols-2 gap-3">
                   {item.variants.map((v, i) => (
                     <motion.div 
                       key={i}
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      onClick={onAdd}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onAdd({...item, name: `${item.name} (${v.name})`})}
                       className="flex flex-col bg-brand-surface-container-high/40 p-2 rounded-lg cursor-pointer hover:bg-brand-primary-container/20 transition-colors border border-transparent hover:border-brand-primary/20"
                     >
-                      <img src={v.image} alt={v.name} className="w-full aspect-[4/3] object-cover rounded-md mb-2" referrerPolicy="no-referrer" />
-                      <span className="text-xs font-bold text-center truncate">{v.name}</span>
+                      <img src={v.image} alt={v.name} className="w-full aspect-square object-cover rounded-md mb-2" referrerPolicy="no-referrer" />
+                      <span className="text-[11px] font-bold text-center truncate">{v.name}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -144,36 +174,282 @@ function ProductCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
   );
 }
 
-function BottomNavBar({ cartCount }: { cartCount: number }) {
+function BottomNavBar({ 
+  activeTab, 
+  setActiveTab, 
+  cartCount 
+}: { 
+  activeTab: string; 
+  setActiveTab: (tab: string) => void;
+  cartCount: number;
+}) {
+  const tabs = [
+    { id: 'menu', label: 'Menü', icon: MenuIcon },
+    { id: 'search', label: 'Ara', icon: Search },
+    { id: 'cart', label: 'Sepetim', icon: ShoppingBasket, count: cartCount },
+  ];
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-100 rounded-t-[32px] shadow-[0_-4px_20px_rgba(244,167,185,0.15)] flex justify-around items-center px-4 pt-3 pb-8">
-      <button className="flex flex-col items-center justify-center space-y-1 bg-brand-primary-container/30 text-brand-primary rounded-2xl px-6 py-2 transition-all">
-        <Menu size={20} />
-        <span className="text-[10px] uppercase font-bold tracking-wider">Menü</span>
-      </button>
-      <button className="flex flex-col items-center justify-center space-y-1 text-zinc-400 px-6 py-2 hover:text-brand-primary transition-all">
-        <Search size={20} />
-        <span className="text-[10px] uppercase font-bold tracking-wider">Ara</span>
-      </button>
-      <button className="relative flex flex-col items-center justify-center space-y-1 text-zinc-400 px-6 py-2 hover:text-brand-primary transition-all">
-        <ShoppingBasket size={20} />
-        <span className="text-[10px] uppercase font-bold tracking-wider">Sepetim</span>
-        {cartCount > 0 && (
-          <span className="absolute top-1 right-5 bg-brand-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-            {cartCount}
-          </span>
-        )}
-      </button>
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-100 rounded-t-[32px] shadow-[0_-4px_30px_rgba(137,76,92,0.1)] flex justify-around items-center px-4 pt-3 pb-8">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`
+              relative flex flex-col items-center justify-center space-y-1 px-6 py-2 transition-all duration-300
+              ${isActive ? 'text-brand-primary' : 'text-zinc-400'}
+            `}
+          >
+            {isActive && (
+              <motion.div 
+                layoutId="navItem"
+                className="absolute inset-0 bg-brand-primary/10 rounded-2xl -z-10"
+              />
+            )}
+            <Icon size={isActive ? 22 : 20} strokeWidth={isActive ? 2.5 : 2} />
+            <span className="text-[10px] uppercase font-bold tracking-wider">{tab.label}</span>
+            {tab.count !== undefined && tab.count > 0 && (
+              <span className="absolute top-1 right-4 bg-brand-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-in zoom-in">
+                {tab.count}
+              </span>
+            )}
+          </button>
+        );
+      })}
     </nav>
+  );
+}
+
+function Sidebar({ isOpen, onClose, onAction }: { isOpen: boolean; onClose: () => void; onAction: (id: string) => void }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+          />
+          <motion.div 
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 left-0 bottom-0 w-[280px] bg-brand-background z-[101] shadow-2xl p-6"
+          >
+            <div className="flex justify-between items-center mb-10">
+              <span className="font-display font-black text-xl text-brand-primary">Menü</span>
+              <button onClick={onClose} className="p-2 bg-brand-surface-container rounded-full text-zinc-500">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {['Hakkımızda', 'Şubelerimiz', 'Kampanyalar', 'İletişim'].map((item) => (
+                <button 
+                  key={item}
+                  onClick={() => { onAction(item); onClose(); }}
+                  className="w-full text-left font-bold text-brand-on-surface py-3 border-b border-brand-surface-container flex justify-between items-center group"
+                >
+                  {item}
+                  <ChevronRight size={16} className="text-brand-outline group-hover:text-brand-primary transition-colors" />
+                </button>
+              ))}
+            </div>
+
+            <div className="absolute bottom-10 left-6 right-6">
+              <div className="bg-brand-primary-container/30 p-4 rounded-2xl text-center">
+                <p className="text-[10px] font-bold text-brand-on-primary-container uppercase tracking-widest mb-1">Müşteri Destek</p>
+                <p className="text-lg font-black text-brand-primary">444 0 555</p>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function AdminPanel({ 
+  items, 
+  onUpdateItem,
+  onBack
+}: { 
+  items: MenuItem[]; 
+  onUpdateItem: (updatedItem: MenuItem) => void;
+  onBack: () => void;
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Partial<MenuItem>>({});
+
+  const handleEdit = (item: MenuItem) => {
+    setEditingId(item.id);
+    setFormData(item);
+  };
+
+  const handleSave = () => {
+    if (editingId) {
+      onUpdateItem({ ...formData } as MenuItem);
+      setEditingId(null);
+    }
+  };
+
+  return (
+    <div className="animate-in fade-in duration-500">
+      <div className="flex items-center gap-3 mb-8">
+        <button onClick={onBack} className="p-2 bg-brand-surface-container rounded-full text-brand-primary">
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="font-display font-black text-2xl text-brand-on-surface">Yönetim Paneli</h2>
+      </div>
+
+      <div className="space-y-4">
+        {items.map((item) => (
+          <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-brand-surface-container overflow-hidden">
+            {editingId === item.id ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-brand-outline">Ürün Adı</label>
+                  <input 
+                    className="w-full bg-brand-surface-container p-3 rounded-xl mt-1 font-bold outline-none ring-brand-primary-container focus:ring-2"
+                    value={formData.name || ''}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-brand-outline">Fiyat (TL)</label>
+                    <input 
+                      type="number"
+                      className="w-full bg-brand-surface-container p-3 rounded-xl mt-1 font-bold outline-none"
+                      value={formData.price || 0}
+                      onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-brand-outline">Kategori</label>
+                    <input 
+                      className="w-full bg-brand-surface-container p-3 rounded-xl mt-1 font-bold outline-none"
+                      value={formData.category || ''}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-brand-outline">Görsel URL</label>
+                  <input 
+                    className="w-full bg-brand-surface-container p-3 rounded-xl mt-1 text-xs outline-none"
+                    value={formData.image || ''}
+                    onChange={(e) => setFormData({...formData, image: e.target.value})}
+                  />
+                </div>
+                <button onClick={handleSave} className="w-full bg-brand-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                  <Check size={18} /> Kaydet
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl shadow-sm" referrerPolicy="no-referrer" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-brand-on-surface">{item.name}</h4>
+                  <p className="text-sm font-bold text-brand-primary">{item.price} TL • {item.category}</p>
+                </div>
+                <button onClick={() => handleEdit(item)} className="p-3 bg-brand-surface-container rounded-xl text-brand-secondary">
+                  <Edit2 size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CartView({ 
+  items, 
+  onUpdateQuantity, 
+  onRemove,
+  onBack 
+}: { 
+  items: CartItem[]; 
+  onUpdateQuantity: (id: string, delta: number) => void;
+  onRemove: (id: string) => void;
+  onBack: () => void;
+}) {
+  const total = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+
+  return (
+    <div className="animate-in fade-in duration-500 pb-20">
+      <div className="flex items-center gap-3 mb-8">
+        <button onClick={onBack} className="p-2 bg-brand-surface-container rounded-full text-brand-primary">
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="font-display font-black text-2xl text-brand-on-surface">Sepetim</h2>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="py-20 text-center space-y-4">
+          <div className="inline-flex items-center justify-center p-8 bg-brand-surface-container rounded-full text-brand-outline">
+            <ShoppingBasket size={48} />
+          </div>
+          <p className="font-bold text-brand-on-surface-variant">Sepetiniz şu an boş.</p>
+          <button onClick={onBack} className="bg-brand-primary text-white px-8 py-3 rounded-xl font-bold">Alışverişe Başla</button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-4 mb-8">
+            {items.map((item) => (
+              <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-brand-surface-container flex items-center gap-4">
+                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl" referrerPolicy="no-referrer" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-brand-on-surface text-sm">{item.name}</h4>
+                  <p className="text-xs font-bold text-brand-primary">{item.price} TL</p>
+                </div>
+                <div className="flex items-center bg-brand-surface-container rounded-xl p-1">
+                  <button onClick={() => onUpdateQuantity(item.id, -1)} className="p-1 text-zinc-500">
+                    <Minus size={14} />
+                  </button>
+                  <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                  <button onClick={() => onUpdateQuantity(item.id, 1)} className="p-1 text-zinc-500">
+                    <Plus size={14} />
+                  </button>
+                </div>
+                <button onClick={() => onRemove(item.id)} className="p-2 text-red-400">
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-brand-primary text-white p-6 rounded-3xl shadow-xl shadow-brand-primary/20">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-bold opacity-80 uppercase text-xs tracking-widest">Genel Toplam</span>
+              <span className="text-2xl font-black">{total} TL</span>
+            </div>
+            <button className="w-full bg-white text-brand-primary py-4 rounded-2xl font-black text-lg shadow-sm active:scale-95 transition-transform">
+              Siparişi Tamamla
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
 export default function App() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState("");
+  const [activeCategory, setActiveCategory] = useState("Tümü");
   const [searchQuery, setSearchQuery] = useState("");
-  const [cartCount, setCartCount] = useState(0);
+  const [activeTab, setActiveTab] = useState("menu");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -194,34 +470,38 @@ export default function App() {
           description: "" 
         }));
 
-        // Augment data with variants grouping
+        // Augment with high quality images and variants
         mappedItems = mappedItems.map(item => {
           if (item.name.includes("Dondurma (Top)")) {
             return {
               ...item,
+              image: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=1000&auto=format&fit=crop',
               description: "Eşref Usta'nın meşhur dondurmaları. İstediğiniz aromayı seçin.",
               variants: [
-                { name: "Sade Maraş", image: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=800&auto=format&fit=crop&q=60" },
-                { name: "Antep Fıstıklı", image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&auto=format&fit=crop&q=60" },
-                { name: "Belçika Çikolatalı", image: "https://images.unsplash.com/photo-1560008511-11c63416e52d?w=800&auto=format&fit=crop&q=60" },
-                { name: "Karadutlu", image: "https://images.unsplash.com/photo-1561845730-208ad5910553?w=800&auto=format&fit=crop&q=60" },
-                { name: "Limonlu", image: "https://images.unsplash.com/photo-1534706936160-d5ee67733576?w=800&auto=format&fit=crop&q=60" },
-                { name: "Bal Bademli", image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=800&auto=format&fit=crop&q=60" },
-                { name: "Vişneli", image: "https://images.unsplash.com/photo-1534706636972-29737133024c?w=800&auto=format&fit=crop&q=60" },
-                { name: "Karamelli", image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800&auto=format&fit=crop&q=60" }
+                { name: "Sade Maraş", image: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=400&auto=format&fit=crop" },
+                { name: "Antep Fıstıklı", image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&auto=format&fit=crop" },
+                { name: "Çikolatalı", image: "https://images.unsplash.com/photo-1560008511-11c63416e52d?w=400&auto=format&fit=crop" },
+                { name: "Karadutlu", image: "https://images.unsplash.com/photo-1561845730-208ad5910553?w=400&auto=format&fit=crop" },
+                { name: "Limonlu", image: "https://images.unsplash.com/photo-1534706936160-d5ee67733576?w=400&auto=format&fit=crop" }
               ]
             };
+          }
+          if (item.name.includes("Kağıt Helva")) {
+            item.image = 'https://images.unsplash.com/photo-1588619183416-562ec877e8be?w=1000&auto=format&fit=crop';
+          }
+          if (item.name.includes("Sütlaç")) {
+            item.image = 'https://images.unsplash.com/photo-1544787210-282aa5bc5196?w=1000&auto=format&fit=crop';
+          }
+          if (item.name.includes("Çiğköfte")) {
+            item.image = 'https://images.unsplash.com/photo-1632733711679-5292d60677a2?w=1000&auto=format&fit=crop';
           }
           if (item.name.includes("Oralet")) {
             return {
               ...item,
-              description: "Mayve aromalı sıcak içecek keyfi.",
+              description: "Meyve aromalı sıcak içecek keyfi.",
               variants: [
-                { name: "Portakal", image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&auto=format&fit=crop&q=60" },
-                { name: "Kuşburnu", image: "https://images.unsplash.com/photo-1515233215286-905a5a176274?w=800&auto=format&fit=crop&q=60" },
-                { name: "Elma", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=800&auto=format&fit=crop&q=60" },
-                { name: "Limon", image: "https://images.unsplash.com/photo-1534706936160-d5ee67733576?w=800&auto=format&fit=crop&q=60" },
-                { name: "Kivi", image: "https://images.unsplash.com/photo-1510005391300-3f74f76ca024?w=800&auto=format&fit=crop&q=60" }
+                { name: "Portakal", image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400&auto=format&fit=crop" },
+                { name: "Kuşburnu", image: "https://images.unsplash.com/photo-1515233215286-905a5a176274?w=400&auto=format&fit=crop" }
               ]
             };
           }
@@ -229,168 +509,151 @@ export default function App() {
         });
 
         const uniqueCategories = Array.from(new Set(mappedItems.map(i => i.category)));
-        
         setItems(mappedItems);
         setCategories(["Tümü", ...uniqueCategories]);
-        setActiveCategory("Tümü");
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Bir hata oluştu');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  const filteredItems = items.filter(item => 
-    (activeCategory === "Tümü" || item.category === activeCategory) && 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = useMemo(() => {
+    return items.filter(item => 
+      (activeCategory === "Tümü" || item.category === activeCategory) && 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [items, activeCategory, searchQuery]);
 
-  const handleAddToCart = () => {
-    setCartCount(prev => prev + 1);
+  const handleAddToCart = (item: MenuItem) => {
+    setCart(prev => {
+      const existing = prev.find(p => p.id === item.id && p.name === item.name);
+      if (existing) {
+        return prev.map(p => p.id === item.id && p.name === item.name ? {...p, quantity: p.quantity + 1} : p);
+      }
+      return [...prev, {...item, quantity: 1}];
+    });
+  };
+
+  const handleUpdateQuantity = (id: string, delta: number) => {
+    setCart(prev => prev.map(p => 
+      p.id === id ? {...p, quantity: Math.max(1, p.quantity + delta)} : p
+    ));
+  };
+
+  const handleRemoveFromCart = (id: string) => {
+    setCart(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleUpdateItem = (updated: MenuItem) => {
+    setItems(prev => prev.map(p => p.id === updated.id ? updated : p));
   };
 
   return (
-    <div className="min-h-screen bg-brand-background pb-32 md:pb-12">
-      <TopAppBar />
+    <div className="min-h-screen bg-brand-background pb-32">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        onAction={(id) => console.log(id)} 
+      />
+      
+      <TopAppBar 
+        onMenuClick={() => setIsSidebarOpen(true)} 
+        onAdminClick={() => setActiveTab(activeTab === 'admin' ? 'menu' : 'admin')}
+        isAdmin={activeTab === 'admin'}
+      />
 
       <main className="pt-24 px-5 max-w-2xl mx-auto">
-        {/* Hero Section */}
-        <header className="mb-8">
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="font-display text-4xl leading-[1.1] font-black text-brand-primary mb-3"
-          >
-            Lezzetli bir dondurma deneyimine hoş geldiniz
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-brand-on-surface-variant font-medium"
-          >
-            Ustalıkla hazırlanan, serinleten tatlar.
-          </motion.p>
-        </header>
+        <AnimatePresence mode="wait">
+          {activeTab === 'menu' && (
+            <motion.div key="menu" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              {/* Hero */}
+              <header className="mb-8">
+                <h1 className="font-display text-4xl font-black text-brand-primary mb-3">Taptaze Lezzetler</h1>
+                <p className="text-brand-on-surface-variant font-medium">Babadan oğula devredilen dondurma sanatı.</p>
+              </header>
 
-        {/* Search Bar */}
-        <section className="mb-8 relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1 text-brand-outline transition-colors group-focus-within:text-brand-primary">
-            <Search size={20} />
-          </div>
-          <input 
-            type="text" 
-            placeholder="Tat arayın..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-brand-surface-container-high/50 border-none rounded-full py-4 pl-12 pr-6 text-brand-on-surface placeholder:text-brand-outline focus:ring-2 focus:ring-brand-primary-container outline-none transition-all shadow-sm"
-          />
-        </section>
+              {/* Categories */}
+              <nav className="flex space-x-3 mb-8 overflow-x-auto pb-4 scrollbar-hide">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeCategory === cat ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20 bg-gradient-to-br from-brand-primary to-brand-tertiary' : 'bg-white text-brand-on-surface-variant shadow-sm'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </nav>
 
-        {/* Categories */}
-        <nav className="flex space-x-3 mb-8 overflow-x-auto pb-4 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`
-                px-6 py-2.5 rounded-full whitespace-nowrap font-bold text-sm transition-all shadow-sm
-                ${activeCategory === cat 
-                  ? 'bg-brand-primary text-white scale-105' 
-                  : 'bg-brand-surface-container text-brand-on-surface-variant hover:bg-brand-surface-container-high'}
-              `}
-            >
-              {cat}
-            </button>
-          ))}
-        </nav>
-
-        {/* Content List */}
-        <section className="space-y-6">
-          {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center space-y-4 text-brand-outline">
-              <Loader2 className="animate-spin" size={40} />
-              <p className="font-bold text-sm uppercase tracking-wider">Menü Yükleniyor...</p>
-            </div>
-          ) : error ? (
-            <div className="py-20 text-center space-y-4">
-              <div className="inline-flex items-center justify-center p-6 bg-red-50 rounded-full text-red-500">
-                <X size={32} />
-              </div>
-              <p className="text-red-600 font-medium">{error}</p>
-              <button 
-                onClick={() => window.location.reload()}
-                className="bg-brand-primary text-white px-6 py-2 rounded-full font-bold text-sm"
-              >
-                Tekrar Dene
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-display font-bold text-lg text-brand-on-surface flex items-center gap-2">
-                  <ChevronRight size={18} className="text-brand-primary" />
-                  {activeCategory}
-                </h2>
-                <span className="text-xs font-bold text-brand-outline uppercase tracking-widest">
-                  {filteredItems.length} Ürün
-                </span>
-              </div>
-
-              <AnimatePresence mode="popLayout">
-                {filteredItems.length > 0 ? (
-                  <div className="grid gap-6">
-                    {filteredItems.map((item) => (
-                      <div key={item.id}>
-                        <ProductCard 
-                          item={item} 
-                          onAdd={handleAddToCart} 
-                        />
-                      </div>
-                    ))}
+              {/* Grid */}
+              <div className="space-y-6">
+                {loading ? (
+                  <div className="py-20 flex flex-col items-center justify-center text-brand-outline">
+                    <Loader2 className="animate-spin mb-4" size={40} />
+                    <p className="font-bold text-sm uppercase tracking-widest">Yükleniyor...</p>
                   </div>
                 ) : (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="py-20 text-center space-y-4"
-                  >
-                    <div className="inline-flex items-center justify-center p-6 bg-brand-surface-container rounded-full text-brand-outline">
-                      <X size={32} />
-                    </div>
-                    <p className="text-brand-on-surface-variant font-medium">Aradığınız kriterlere uygun ürün bulunamadı.</p>
-                  </motion.div>
+                  <div className="grid gap-6">
+                    {filteredItems.map((item) => (
+                      <ProductCard key={item.id} item={item} onAdd={handleAddToCart} />
+                    ))}
+                  </div>
                 )}
-              </AnimatePresence>
-            </>
+              </div>
+            </motion.div>
           )}
-        </section>
 
-        {/* Footer */}
-        <footer className="mt-20 pt-12 border-t border-brand-surface-container text-center pb-8">
-          <h4 className="font-display font-bold text-xl text-brand-on-surface mb-3">İletişim</h4>
-          <p className="text-brand-on-surface-variant text-sm mb-6 max-w-[240px] mx-auto leading-relaxed">
-            info@esrefusta.com<br />
-            <span className="font-bold">+90 555 123 4567</span>
-          </p>
-          <div className="flex justify-center space-x-4">
-            <a href="#" className="p-3 bg-brand-surface-container hover:bg-brand-primary-container/20 rounded-full text-brand-tertiary transition-all" referrerPolicy="no-referrer">
-              <Share2 size={20} />
-            </a>
-            <a href="#" className="p-3 bg-brand-surface-container hover:bg-brand-primary-container/20 rounded-full text-brand-tertiary transition-all" referrerPolicy="no-referrer">
-              <PhoneCall size={20} />
-            </a>
-          </div>
-          <div className="mt-12 text-[10px] text-brand-outline font-bold uppercase tracking-[0.2em]">
-            © 2026 Eşref Usta Dondurma
-          </div>
-        </footer>
+          {activeTab === 'search' && (
+            <motion.div key="search" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              <div className="mb-8 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-outline" size={20} />
+                <input 
+                  autoFocus
+                  placeholder="Ürün ismiyle ara..."
+                  className="w-full bg-white border-none rounded-2xl py-4 pl-12 pr-6 shadow-sm focus:ring-2 focus:ring-brand-primary-container outline-none"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-6">
+                {filteredItems.map((item) => (
+                  <ProductCard key={item.id} item={item} onAdd={handleAddToCart} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'cart' && (
+            <motion.div key="cart" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              <CartView 
+                items={cart} 
+                onUpdateQuantity={handleUpdateQuantity} 
+                onRemove={handleRemoveFromCart}
+                onBack={() => setActiveTab('menu')}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'admin' && (
+            <motion.div key="admin" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              <AdminPanel 
+                items={items} 
+                onUpdateItem={handleUpdateItem}
+                onBack={() => setActiveTab('menu')}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      <BottomNavBar cartCount={cartCount} />
+      <BottomNavBar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        cartCount={cart.reduce((a, b) => a + b.quantity, 0)} 
+      />
     </div>
   );
 }
