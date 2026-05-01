@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Epilogue:wght@600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Epilogue", sans-serif;
+
+  --color-brand-primary: #894c5c;
+  --color-brand-primary-container: #f4a7b9;
+  --color-brand-on-primary-container: #733949;
+  --color-brand-secondary: #30628a;
+  --color-brand-tertiary: #834e68;
+  --color-brand-background: #fdf9f0;
+  --color-brand-surface: #fdf9f0;
+  --color-brand-surface-container: #f1eee5;
+  --color-brand-surface-container-high: #ece8df;
+  --color-brand-on-surface: #1c1c17;
+  --color-brand-on-surface-variant: #524346;
+  --color-brand-outline: #847376;
+
+  --radius-xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-background text-brand-on-surface font-sans;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
