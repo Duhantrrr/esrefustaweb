@@ -1,0 +1,23 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A food or drink item on the menu",
+      "type": "object",
+      "properties": {
+        "ad": { "type": "string", "description": "The name of the product" },
+        "fiyat": { "type": "number", "description": "The price of the product" },
+        "img": { "type": "string", "description": "URL to the product image" },
+        "kategori": { "type": "string", "description": "Category of the product" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated timestamp" }
+      },
+      "required": ["ad", "fiyat", "kategori"]
+    }
+  },
+  "firestore": {
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of menu products"
+    }
+  }
+}

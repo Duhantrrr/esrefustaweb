@@ -19,6 +19,25 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
+// Firebase
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  onSnapshot, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  getDocs,
+  serverTimestamp,
+  query,
+  limit
+} from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
 // --- Types ---
 
 interface MenuItem {
@@ -33,14 +52,6 @@ interface MenuItem {
 
 interface CartItem extends MenuItem {
   quantity: number;
-}
-
-interface ApiItem {
-  _id: string;
-  ad: string;
-  fiyat: number;
-  img: string;
-  kategori: string;
 }
 
 // --- Components ---
@@ -490,84 +501,83 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        let itemsData: ApiItem[] = [];
-        
-        try {
-          const response = await fetch('/api/urunler');
-          if (!response.ok) throw new Error('API Unavailable');
-          itemsData = await response.json();
-        } catch (apiErr) {
-          console.warn("API not reached, using fallback data.");
-          // Fallback data for static deployments (like Vercel)
-          itemsData = [
-            { _id: "1", ad: "Dondurma (Top)", fiyat: 20, img: "https://i.ibb.co/qMm8HG95/25acf666340c.jpg", kategori: "Dondurma" },
-            { _id: "2", ad: "Hamsiköy Sütlaç", fiyat: 100, img: "https://i.ibb.co/8L6dGCPW/442f0f98bdce.jpg", kategori: "Tatlılar" },
-            { _id: "3", ad: "Meyveli Soda", fiyat: 25, img: "https://i.ibb.co/xKJ4HkzG/813c2bafa07d.jpg", kategori: "İçecekler" },
-            { _id: "4", ad: "Sade Soda", fiyat: 20, img: "https://i.ibb.co/KpRv0FkS/920ceaa473da.jpg", kategori: "İçecekler" },
-            { _id: "5", ad: "Su", fiyat: 15, img: "https://i.ibb.co/G4tBVRmP/6c661f12a995.jpg", kategori: "İçecekler" },
-          ];
+    const productsRef = collection(db, 'products');
+    
+    // Seed initial data if empty
+    const seedData = async () => {
+      const q = query(productsRef, limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        console.log("Seeding initial products...");
+        const initialProducts = [
+          { ad: "Dondurma (Top)", fiyat: 20, img: "https://i.ibb.co/qMm8HG95/25acf666340c.jpg", kategori: "Dondurma" },
+          { ad: "Hamsiköy Sütlaç", fiyat: 100, img: "https://i.ibb.co/8L6dGCPW/442f0f98bdce.jpg", kategori: "Tatlılar" },
+          { ad: "Meyveli Soda", fiyat: 25, img: "https://i.ibb.co/xKJ4HkzG/813c2bafa07d.jpg", kategori: "İçecekler" },
+          { ad: "Sade Soda", fiyat: 20, img: "https://i.ibb.co/KpRv0FkS/920ceaa473da.jpg", kategori: "İçecekler" },
+          { ad: "Su", fiyat: 15, img: "https://i.ibb.co/G4tBVRmP/6c661f12a995.jpg", kategori: "İçecekler" },
+          { ad: "Çiğköfte Dürüm", fiyat: 80, img: "https://i.ibb.co/TDSpxVMX/97886b15e606.jpg", kategori: "Çiğköfte" },
+          { ad: "Türk Kahvesi", fiyat: 45, img: "https://i.ibb.co/6cVcSKwr/8725bad50158.jpg", kategori: "İçecekler" },
+          { ad: "Oralet Çeşitleri", fiyat: 15, img: "https://i.ibb.co/RksTLmzy/3a1c150e9e67.jpg", kategori: "İçecekler" },
+          { ad: "Çay", fiyat: 15, img: "https://i.ibb.co/MHXkbc3/6446b8d1e8dd.jpg", kategori: "İçecekler" }
+        ];
+        for (const p of initialProducts) {
+          await setDoc(doc(productsRef), { ...p, updatedAt: serverTimestamp() });
         }
-        
-        let mappedItems: MenuItem[] = itemsData.map(item => ({
-          id: item._id,
-          name: item.ad,
-          price: item.fiyat,
-          image: item.img,
-          category: item.kategori,
-          description: "" 
-        }));
-
-        // Augment with variants
-        mappedItems = mappedItems.map(item => {
-          const lowerName = item.name.toLowerCase();
-          
-          if (lowerName.includes("dondurma (top)")) {
-            return {
-              ...item,
-              description: "Eşref Usta'nın meşhur dondurmaları. İstediğiniz aromayı seçin.",
-              variants: [
-                { name: "Sade", image: "" }, { name: "Kakao", image: "" }, { name: "Limon", image: "" },
-                { name: "Çilek", image: "" }, { name: "Karamel", image: "" }, { name: "Kavun", image: "" },
-                { name: "Aronia", image: "" }, { name: "Şeftali", image: "" }, { name: "Böğürtlen", image: "" },
-                { name: "İncir", image: "" }, { name: "Ceviz", image: "" }, { name: "Yoğurtlu Meyveli", image: "" },
-                { name: "Antep Fıstığı", image: "" }, { name: "Vişne", image: "" }, { name: "Oreo", image: "" },
-                { name: "Karpuz", image: "" }, { name: "Ballı Muz", image: "" }, { name: "Ballı Badem", image: "" },
-                { name: "Damla Sakızı", image: "" }, { name: "Yeşil Elma", image: "" }, { name: "Karadut", image: "" },
-                { name: "Big Bubble", image: "" }, { name: "Kivi", image: "" }, { name: "Mango", image: "" },
-                { name: "Orman Meyveli", image: "" }
-              ]
-            };
-          }
-
-          if (lowerName.includes("meyveli soda") || lowerName.includes("sade soda")) {
-            return {
-              ...item,
-              description: "Ferahlatıcı meyve seçenekleriyle özel soda keyfi.",
-              variants: [
-                { name: "Çilek & Karpuz", image: "" },
-                { name: "Nar", image: "" },
-                { name: "Sade", image: "" },
-                { name: "Limon", image: "" },
-                { name: "Guava", image: "" }
-              ]
-            };
-          }
-          return item;
-        });
-
-        const uniqueCategories = Array.from(new Set(mappedItems.map(i => i.category)));
-        setItems(mappedItems);
-        setCategories(["Tümü", ...uniqueCategories]);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Bir hata oluştu');
-      } finally {
-        setLoading(false);
       }
     };
-    fetchData();
+    seedData();
+
+    setLoading(true);
+    const unsubscribe = onSnapshot(productsRef, (snapshot) => {
+      const fetchedItems: MenuItem[] = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        let item: MenuItem = {
+          id: docSnap.id,
+          name: data.ad,
+          price: data.fiyat,
+          image: data.img,
+          category: data.kategori,
+          description: ""
+        };
+
+        const lowerName = item.name.toLowerCase();
+        if (lowerName.includes("dondurma (top)")) {
+          item.description = "Eşref Usta'nın meşhur dondurmaları. İstediğiniz aromayı seçin.";
+          item.variants = [
+            { name: "Sade", image: "" }, { name: "Kakao", image: "" }, { name: "Limon", image: "" },
+            { name: "Çilek", image: "" }, { name: "Karamel", image: "" }, { name: "Kavun", image: "" },
+            { name: "Aronia", image: "" }, { name: "Şeftali", image: "" }, { name: "Böğürtlen", image: "" },
+            { name: "İncir", image: "" }, { name: "Ceviz", image: "" }, { name: "Yoğurtlu Meyveli", image: "" },
+            { name: "Antep Fıstığı", image: "" }, { name: "Vişne", image: "" }, { name: "Oreo", image: "" },
+            { name: "Karpuz", image: "" }, { name: "Ballı Muz", image: "" }, { name: "Ballı Badem", image: "" },
+            { name: "Damla Sakızı", image: "" }, { name: "Yeşil Elma", image: "" }, { name: "Karadut", image: "" },
+            { name: "Big Bubble", image: "" }, { name: "Kivi", image: "" }, { name: "Mango", image: "" },
+            { name: "Orman Meyveli", image: "" }
+          ];
+        }
+
+        if (lowerName.includes("meyveli soda") || lowerName.includes("sade soda")) {
+          item.description = "Ferahlatıcı meyve seçenekleriyle özel soda keyfi.";
+          item.variants = [
+            { name: "Çilek & Karpuz", image: "" },
+            { name: "Nar", image: "" },
+            { name: "Sade", image: "" },
+            { name: "Limon", image: "" },
+            { name: "Guava", image: "" }
+          ];
+        }
+        return item;
+      });
+
+      setItems(fetchedItems);
+      setCategories(["Tümü", ...Array.from(new Set(fetchedItems.map(i => i.category)))]);
+      setLoading(false);
+    }, (err) => {
+      setError(err.message);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -599,24 +609,18 @@ export default function App() {
 
   const handleUpdateItem = async (updated: MenuItem) => {
     try {
-      const response = await fetch(`/api/urunler/${updated.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ad: updated.name,
-          fiyat: updated.price,
-          img: updated.image,
-          kategori: updated.category
-        })
+      const productRef = doc(db, 'products', updated.id);
+      await updateDoc(productRef, {
+        ad: updated.name,
+        fiyat: updated.price,
+        img: updated.image,
+        kategori: updated.category,
+        updatedAt: serverTimestamp()
       });
-
-      if (response.ok) {
-        setItems(prev => prev.map(p => p.id === updated.id ? updated : p));
-      } else {
-        console.error('Update failed');
-      }
+      // Local state will update via onSnapshot
     } catch (err) {
       console.error('Error updating item:', err);
+      alert('Güncelleme başarısız!');
     }
   };
 
