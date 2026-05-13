@@ -493,11 +493,25 @@ export default function App() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/urunler');
-        if (!response.ok) throw new Error('Ürünler yüklenirken bir hata oluştu');
-        const data: ApiItem[] = await response.json();
+        let itemsData: ApiItem[] = [];
         
-        let mappedItems: MenuItem[] = data.map(item => ({
+        try {
+          const response = await fetch('/api/urunler');
+          if (!response.ok) throw new Error('API Unavailable');
+          itemsData = await response.json();
+        } catch (apiErr) {
+          console.warn("API not reached, using fallback data.");
+          // Fallback data for static deployments (like Vercel)
+          itemsData = [
+            { _id: "1", ad: "Dondurma (Top)", fiyat: 20, img: "https://i.ibb.co/qMm8HG95/25acf666340c.jpg", kategori: "Dondurma" },
+            { _id: "2", ad: "Hamsiköy Sütlaç", fiyat: 100, img: "https://i.ibb.co/8L6dGCPW/442f0f98bdce.jpg", kategori: "Tatlılar" },
+            { _id: "3", ad: "Meyveli Soda", fiyat: 25, img: "https://i.ibb.co/xKJ4HkzG/813c2bafa07d.jpg", kategori: "İçecekler" },
+            { _id: "4", ad: "Sade Soda", fiyat: 20, img: "https://i.ibb.co/KpRv0FkS/920ceaa473da.jpg", kategori: "İçecekler" },
+            { _id: "5", ad: "Su", fiyat: 15, img: "https://i.ibb.co/G4tBVRmP/6c661f12a995.jpg", kategori: "İçecekler" },
+          ];
+        }
+        
+        let mappedItems: MenuItem[] = itemsData.map(item => ({
           id: item._id,
           name: item.ad,
           price: item.fiyat,
@@ -506,45 +520,32 @@ export default function App() {
           description: "" 
         }));
 
-        // Augment with variants grouping while keeping API images
+        // Augment with variants
         mappedItems = mappedItems.map(item => {
-          if (item.name.includes("Dondurma (Top)")) {
+          const lowerName = item.name.toLowerCase();
+          
+          if (lowerName.includes("dondurma (top)")) {
             return {
               ...item,
               description: "Eşref Usta'nın meşhur dondurmaları. İstediğiniz aromayı seçin.",
               variants: [
-                { name: "Sade", image: "" },
-                { name: "Kakao", image: "" },
-                { name: "Limon", image: "" },
-                { name: "Çilek", image: "" },
-                { name: "Karamel", image: "" },
-                { name: "Kavun", image: "" },
-                { name: "Aronia", image: "" },
-                { name: "Şeftali", image: "" },
-                { name: "Böğürtlen", image: "" },
-                { name: "İncir", image: "" },
-                { name: "Ceviz", image: "" },
-                { name: "Yoğurtlu Meyveli", image: "" },
-                { name: "Antep Fıstığı", image: "" },
-                { name: "Vişne", image: "" },
-                { name: "Oreo", image: "" },
-                { name: "Karpuz", image: "" },
-                { name: "Ballı Muz", image: "" },
-                { name: "Ballı Badem", image: "" },
-                { name: "Damla Sakızı", image: "" },
-                { name: "Yeşil Elma", image: "" },
-                { name: "Karadut", image: "" },
-                { name: "Big Bubble", image: "" },
-                { name: "Kivi", image: "" },
-                { name: "Mango", image: "" },
+                { name: "Sade", image: "" }, { name: "Kakao", image: "" }, { name: "Limon", image: "" },
+                { name: "Çilek", image: "" }, { name: "Karamel", image: "" }, { name: "Kavun", image: "" },
+                { name: "Aronia", image: "" }, { name: "Şeftali", image: "" }, { name: "Böğürtlen", image: "" },
+                { name: "İncir", image: "" }, { name: "Ceviz", image: "" }, { name: "Yoğurtlu Meyveli", image: "" },
+                { name: "Antep Fıstığı", image: "" }, { name: "Vişne", image: "" }, { name: "Oreo", image: "" },
+                { name: "Karpuz", image: "" }, { name: "Ballı Muz", image: "" }, { name: "Ballı Badem", image: "" },
+                { name: "Damla Sakızı", image: "" }, { name: "Yeşil Elma", image: "" }, { name: "Karadut", image: "" },
+                { name: "Big Bubble", image: "" }, { name: "Kivi", image: "" }, { name: "Mango", image: "" },
                 { name: "Orman Meyveli", image: "" }
               ]
             };
           }
-          if (item.name.toLowerCase().includes("meyveli soda")) {
+
+          if (lowerName.includes("meyveli soda") || lowerName.includes("sade soda")) {
             return {
               ...item,
-              description: "Özel meyve aromalı ferahlatıcı içecek keyfi.",
+              description: "Ferahlatıcı meyve seçenekleriyle özel soda keyfi.",
               variants: [
                 { name: "Çilek & Karpuz", image: "" },
                 { name: "Nar", image: "" },
