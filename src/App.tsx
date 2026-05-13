@@ -281,11 +281,13 @@ function Sidebar({ isOpen, onClose, onAction }: { isOpen: boolean; onClose: () =
 function AdminPanel({ 
   items, 
   onUpdateItem,
-  onBack
+  onBack,
+  categories
 }: { 
   items: MenuItem[]; 
   onUpdateItem: (updatedItem: MenuItem) => void;
   onBack: () => void;
+  categories: string[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<MenuItem>>({});
@@ -336,10 +338,23 @@ function AdminPanel({
     setFormData(item);
   };
 
+  const handleAddNew = () => {
+    const newId = `new-${Date.now()}`;
+    setEditingId(newId);
+    setFormData({
+      id: newId,
+      name: "",
+      price: 0,
+      category: categories[1] || "Diğer",
+      image: ""
+    });
+  };
+
   const handleSave = () => {
     if (editingId) {
       onUpdateItem({ ...formData } as MenuItem);
       setEditingId(null);
+      setFormData({});
     }
   };
 
@@ -352,16 +367,89 @@ function AdminPanel({
           </button>
           <h2 className="font-display font-black text-2xl text-brand-on-surface">Yönetim</h2>
         </div>
-        <button onClick={() => setIsAuthorized(false)} className="text-xs font-bold text-red-400 p-2">Çıkış</button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleAddNew}
+            className="bg-brand-primary text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-brand-primary/20 active:scale-95 transition-transform"
+          >
+            Yeni Ekle
+          </button>
+          <button onClick={() => setIsAuthorized(false)} className="text-xs font-bold text-red-500 p-2">Çıkış</button>
+        </div>
       </div>
 
       <div className="space-y-4">
+        {editingId && editingId.startsWith('new-') && (
+          <div className="bg-brand-primary/5 p-6 rounded-3xl border-2 border-dashed border-brand-primary/30 mb-8 animate-in slide-in-from-top duration-300">
+            <h3 className="font-black mb-4 text-brand-primary flex items-center gap-2">
+              <Plus size={20} /> Yeni Ürün Ekle
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-brand-outline">Ürün Adı</label>
+                <input 
+                  className="w-full bg-white p-3 rounded-xl mt-1 font-bold outline-none border border-brand-surface-container-high"
+                  placeholder="Örn: Karışık Dondurma"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-brand-outline">Fiyat (TL)</label>
+                  <input 
+                    type="number"
+                    className="w-full bg-white p-3 rounded-xl mt-1 font-bold outline-none border border-brand-surface-container-high"
+                    value={formData.price || 0}
+                    onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-brand-outline">Kategori</label>
+                  <select 
+                    className="w-full bg-white p-3 rounded-xl mt-1 font-bold outline-none border border-brand-surface-container-high"
+                    value={formData.category || ''}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  >
+                    {categories.filter(c => c !== 'Tümü').map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-brand-outline">Görsel URL</label>
+                <input 
+                  className="w-full bg-white p-3 rounded-xl mt-1 text-xs outline-none border border-brand-surface-container-high"
+                  placeholder="https://gorsel-linki.com/resim.jpg"
+                  value={formData.image || ''}
+                  onChange={(e) => setFormData({...formData, image: e.target.value})}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={handleSave} 
+                  className="flex-1 bg-brand-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20"
+                >
+                  <Check size={18} /> Kaydet
+                </button>
+                <button 
+                  onClick={() => {setEditingId(null); setFormData({});}}
+                  className="px-6 py-3 bg-brand-surface-container text-brand-outline rounded-xl font-bold"
+                >
+                  İptal
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {items.map((item) => (
           <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-brand-surface-container overflow-hidden">
             {editingId === item.id ? (
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-brand-outline">Ürün Adı</label>
+                  <label className="text-[10px] font-bold uppercase text-brand-outline">Ürün Düzenle</label>
                   <input 
                     className="w-full bg-brand-surface-container p-3 rounded-xl mt-1 font-bold outline-none ring-brand-primary-container focus:ring-2"
                     value={formData.name || ''}
@@ -395,9 +483,14 @@ function AdminPanel({
                     onChange={(e) => setFormData({...formData, image: e.target.value})}
                   />
                 </div>
-                <button onClick={handleSave} className="w-full bg-brand-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                  <Check size={18} /> Kaydet
-                </button>
+                <div className="flex gap-3">
+                  <button onClick={handleSave} className="flex-1 bg-brand-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                    <Check size={18} /> Güncelle
+                  </button>
+                  <button onClick={() => {setEditingId(null); setFormData({});}} className="px-6 py-3 bg-brand-surface-container text-brand-outline rounded-xl font-bold">
+                    İptal
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-4">
@@ -609,18 +702,30 @@ export default function App() {
 
   const handleUpdateItem = async (updated: MenuItem) => {
     try {
-      const productRef = doc(db, 'products', updated.id);
-      await updateDoc(productRef, {
-        ad: updated.name,
-        fiyat: updated.price,
-        img: updated.image,
-        kategori: updated.category,
-        updatedAt: serverTimestamp()
-      });
-      // Local state will update via onSnapshot
+      if (updated.id.startsWith('new-')) {
+        // Create new item
+        const productsRef = collection(db, 'products');
+        await setDoc(doc(productsRef), {
+          ad: updated.name,
+          fiyat: updated.price,
+          img: updated.image,
+          kategori: updated.category,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        // Update existing item
+        const productRef = doc(db, 'products', updated.id);
+        await updateDoc(productRef, {
+          ad: updated.name,
+          fiyat: updated.price,
+          img: updated.image,
+          kategori: updated.category,
+          updatedAt: serverTimestamp()
+        });
+      }
     } catch (err) {
       console.error('Error updating item:', err);
-      alert('Güncelleme başarısız!');
+      alert('İşlem başarısız!');
     }
   };
 
@@ -714,6 +819,7 @@ export default function App() {
                 items={items} 
                 onUpdateItem={handleUpdateItem}
                 onBack={() => setActiveTab('menu')}
+                categories={categories}
               />
             </motion.div>
           )}
