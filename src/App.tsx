@@ -46,36 +46,21 @@ interface ApiItem {
 // --- Components ---
 
 function TopAppBar({ 
-  onMenuClick, 
-  onAdminClick, 
-  isAdmin 
+  onMenuClick
 }: { 
   onMenuClick: () => void; 
-  onAdminClick: () => void;
-  isAdmin: boolean;
 }) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/90 backdrop-blur-md border-b border-zinc-100 flex items-center justify-between px-5 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/90 backdrop-blur-md border-b border-zinc-100 flex items-center justify-center px-5 shadow-sm">
       <button 
         onClick={onMenuClick}
-        className="p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500"
+        className="absolute left-5 p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500"
       >
         <MenuIcon size={24} />
       </button>
       <span className="font-display font-black text-xl tracking-tight text-brand-primary">
         Eşref Usta Dondurma
       </span>
-      <div className="flex items-center gap-1">
-        <button 
-          onClick={onAdminClick}
-          className={`p-2 rounded-full transition-colors ${isAdmin ? 'text-brand-primary bg-brand-primary/10' : 'text-zinc-500 hover:bg-brand-primary/5'}`}
-        >
-          <Settings size={22} />
-        </button>
-        <button className="p-2 hover:bg-brand-primary/5 rounded-full transition-colors text-zinc-500">
-          <Languages size={22} />
-        </button>
-      </div>
     </header>
   );
 }
@@ -86,6 +71,7 @@ function ProductCard({
 }: { 
   item: MenuItem; 
   onAdd: (item: MenuItem) => void;
+  key?: any;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -160,7 +146,13 @@ function ProductCard({
                       onClick={() => onAdd({...item, name: `${item.name} (${v.name})`})}
                       className="flex flex-col bg-brand-surface-container-high/40 p-2 rounded-lg cursor-pointer hover:bg-brand-primary-container/20 transition-colors border border-transparent hover:border-brand-primary/20"
                     >
-                      <img src={v.image} alt={v.name} className="w-full aspect-square object-cover rounded-md mb-2" referrerPolicy="no-referrer" />
+                      {v.image ? (
+                        <img src={v.image} alt={v.name} className="w-full aspect-square object-cover rounded-md mb-2" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full aspect-square bg-brand-primary/10 rounded-md mb-2 flex items-center justify-center text-brand-primary/40">
+                          <Plus size={16} />
+                        </div>
+                      )}
                       <span className="text-[11px] font-bold text-center truncate">{v.name}</span>
                     </motion.div>
                   ))}
@@ -286,6 +278,47 @@ function AdminPanel({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<MenuItem>>({});
+  const [password, setPassword] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const handleLogin = () => {
+    if (password === "admin123") {
+      setIsAuthorized(true);
+    } else {
+      alert("Hatalı şifre!");
+    }
+  };
+
+  if (!isAuthorized) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center space-y-6">
+        <div className="bg-brand-primary/10 p-6 rounded-full text-brand-primary">
+          <Settings size={48} />
+        </div>
+        <div className="text-center">
+          <h2 className="font-display font-black text-2xl mb-2">Panel Girişi</h2>
+          <p className="text-sm text-brand-on-surface-variant">Lütfen yönetim şifresini girin.</p>
+        </div>
+        <div className="w-full max-w-xs space-y-4">
+          <input 
+            type="password"
+            placeholder="Şifre"
+            className="w-full bg-white border border-brand-surface-container-high p-4 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 text-center font-bold"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+          />
+          <button 
+            onClick={handleLogin}
+            className="w-full bg-brand-primary text-white py-4 rounded-2xl font-black shadow-lg shadow-brand-primary/20 active:scale-95 transition-transform"
+          >
+            Giriş Yap
+          </button>
+          <button onClick={onBack} className="w-full text-brand-outline font-bold text-sm">Geri Dön</button>
+        </div>
+      </div>
+    );
+  }
 
   const handleEdit = (item: MenuItem) => {
     setEditingId(item.id);
@@ -301,11 +334,14 @@ function AdminPanel({
 
   return (
     <div className="animate-in fade-in duration-500">
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={onBack} className="p-2 bg-brand-surface-container rounded-full text-brand-primary">
-          <ArrowLeft size={20} />
-        </button>
-        <h2 className="font-display font-black text-2xl text-brand-on-surface">Yönetim Paneli</h2>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 bg-brand-surface-container rounded-full text-brand-primary">
+            <ArrowLeft size={20} />
+          </button>
+          <h2 className="font-display font-black text-2xl text-brand-on-surface">Yönetim</h2>
+        </div>
+        <button onClick={() => setIsAuthorized(false)} className="text-xs font-bold text-red-400 p-2">Çıkış</button>
       </div>
 
       <div className="space-y-4">
@@ -457,7 +493,7 @@ export default function App() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://e-ref-api.onrender.com/api/urunler');
+        const response = await fetch('/api/urunler');
         if (!response.ok) throw new Error('Ürünler yüklenirken bir hata oluştu');
         const data: ApiItem[] = await response.json();
         
@@ -477,21 +513,44 @@ export default function App() {
               ...item,
               description: "Eşref Usta'nın meşhur dondurmaları. İstediğiniz aromayı seçin.",
               variants: [
-                { name: "Sade Maraş", image: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=400&auto=format&fit=crop" },
-                { name: "Antep Fıstıklı", image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&auto=format&fit=crop" },
-                { name: "Çikolatalı", image: "https://images.unsplash.com/photo-1560008511-11c63416e52d?w=400&auto=format&fit=crop" },
-                { name: "Karadutlu", image: "https://images.unsplash.com/photo-1561845730-208ad5910553?w=400&auto=format&fit=crop" },
-                { name: "Limonlu", image: "https://images.unsplash.com/photo-1534706936160-d5ee67733576?w=400&auto=format&fit=crop" }
+                { name: "Sade", image: "" },
+                { name: "Kakao", image: "" },
+                { name: "Limon", image: "" },
+                { name: "Çilek", image: "" },
+                { name: "Karamel", image: "" },
+                { name: "Kavun", image: "" },
+                { name: "Aronia", image: "" },
+                { name: "Şeftali", image: "" },
+                { name: "Böğürtlen", image: "" },
+                { name: "İncir", image: "" },
+                { name: "Ceviz", image: "" },
+                { name: "Yoğurtlu Meyveli", image: "" },
+                { name: "Antep Fıstığı", image: "" },
+                { name: "Vişne", image: "" },
+                { name: "Oreo", image: "" },
+                { name: "Karpuz", image: "" },
+                { name: "Ballı Muz", image: "" },
+                { name: "Ballı Badem", image: "" },
+                { name: "Damla Sakızı", image: "" },
+                { name: "Yeşil Elma", image: "" },
+                { name: "Karadut", image: "" },
+                { name: "Big Bubble", image: "" },
+                { name: "Kivi", image: "" },
+                { name: "Mango", image: "" },
+                { name: "Orman Meyveli", image: "" }
               ]
             };
           }
-          if (item.name.includes("Oralet")) {
+          if (item.name.toLowerCase().includes("meyveli soda")) {
             return {
               ...item,
-              description: "Meyve aromalı sıcak içecek keyfi.",
+              description: "Özel meyve aromalı ferahlatıcı içecek keyfi.",
               variants: [
-                { name: "Portakal", image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400&auto=format&fit=crop" },
-                { name: "Kuşburnu", image: "https://images.unsplash.com/photo-1515233215286-905a5a176274?w=400&auto=format&fit=crop" }
+                { name: "Çilek & Karpuz", image: "" },
+                { name: "Nar", image: "" },
+                { name: "Sade", image: "" },
+                { name: "Limon", image: "" },
+                { name: "Guava", image: "" }
               ]
             };
           }
@@ -537,8 +596,27 @@ export default function App() {
     setCart(prev => prev.filter(p => p.id !== id));
   };
 
-  const handleUpdateItem = (updated: MenuItem) => {
-    setItems(prev => prev.map(p => p.id === updated.id ? updated : p));
+  const handleUpdateItem = async (updated: MenuItem) => {
+    try {
+      const response = await fetch(`/api/urunler/${updated.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ad: updated.name,
+          fiyat: updated.price,
+          img: updated.image,
+          kategori: updated.category
+        })
+      });
+
+      if (response.ok) {
+        setItems(prev => prev.map(p => p.id === updated.id ? updated : p));
+      } else {
+        console.error('Update failed');
+      }
+    } catch (err) {
+      console.error('Error updating item:', err);
+    }
   };
 
   return (
@@ -551,8 +629,6 @@ export default function App() {
       
       <TopAppBar 
         onMenuClick={() => setIsSidebarOpen(true)} 
-        onAdminClick={() => setActiveTab(activeTab === 'admin' ? 'menu' : 'admin')}
-        isAdmin={activeTab === 'admin'}
       />
 
       <main className="pt-24 px-5 max-w-2xl mx-auto">
@@ -587,7 +663,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="grid gap-6">
-                    {filteredItems.map((item) => (
+                    {filteredItems.map((item: MenuItem) => (
                       <ProductCard key={item.id} item={item} onAdd={handleAddToCart} />
                     ))}
                   </div>
@@ -609,7 +685,7 @@ export default function App() {
                 />
               </div>
               <div className="grid gap-6">
-                {filteredItems.map((item) => (
+                {filteredItems.map((item: MenuItem) => (
                   <ProductCard key={item.id} item={item} onAdd={handleAddToCart} />
                 ))}
               </div>
@@ -637,6 +713,18 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+        
+        <footer className="mt-20 pt-12 border-t border-brand-surface-container text-center pb-8">
+          <div className="text-[10px] text-brand-outline font-bold uppercase tracking-[0.2em] mb-4">
+            © 2026 Eşref Usta Dondurma
+          </div>
+          <button 
+            onClick={() => setActiveTab('admin')}
+            className="text-[10px] text-brand-outline/40 hover:text-brand-primary font-bold uppercase tracking-widest transition-colors"
+          >
+            Yönetim Paneli
+          </button>
+        </footer>
       </main>
 
       <BottomNavBar 

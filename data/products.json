@@ -1,0 +1,79 @@
+[
+  {
+    "_id": "1",
+    "ad": "Dondurmalı Kağıt Helva",
+    "fiyat": 100,
+    "img": "https://i.ibb.co/XwQzgg8/b510e0a02dd8.jpg",
+    "kategori": "Dondurma"
+  },
+  {
+    "_id": "2",
+    "ad": "Dondurma (Top)",
+    "fiyat": 20,
+    "img": "https://i.ibb.co/qMm8HG95/25acf666340c.jpg",
+    "kategori": "Dondurma"
+  },
+  {
+    "_id": "3",
+    "ad": "Çiğköfte Dürüm",
+    "fiyat": 80,
+    "img": "https://i.ibb.co/TDSpxVMX/97886b15e606.jpg",
+    "kategori": "Çiğköfte"
+  },
+  {
+    "_id": "4",
+    "ad": "Hamsiköy Sütlaç",
+    "fiyat": 100,
+    "img": "https://i.ibb.co/8L6dGCPW/442f0f98bdce.jpg",
+    "kategori": "Tatlılar"
+  },
+  {
+    "_id": "5",
+    "ad": "Su",
+    "fiyat": 15,
+    "img": "https://i.ibb.co/G4tBVRmP/6c661f12a995.jpg",
+    "kategori": "İçecekler"
+  },
+  {
+    "_id": "6",
+    "ad": "Dondurma (KG)",
+    "fiyat": 450,
+    "img": "https://i.ibb.co/99p0T29n/81dc7bc1649e.jpg",
+    "kategori": "Dondurma"
+  },
+  {
+    "_id": "7",
+    "ad": "Sade Soda",
+    "fiyat": 20,
+    "img": "https://i.ibb.co/KpRv0FkS/920ceaa473da.jpg",
+    "kategori": "İçecekler"
+  },
+  {
+    "_id": "8",
+    "ad": "Meyveli Soda",
+    "fiyat": 25,
+    "img": "https://i.ibb.co/xKJ4HkzG/813c2bafa07d.jpg",
+    "kategori": "İçecekler"
+  },
+  {
+    "_id": "9",
+    "ad": "Türk Kahvesi",
+    "fiyat": 45,
+    "img": "https://i.ibb.co/6cVcSKwr/8725bad50158.jpg",
+    "kategori": "İçecekler"
+  },
+  {
+    "_id": "10",
+    "ad": "Oralet Çeşitleri",
+    "fiyat": 15,
+    "img": "https://i.ibb.co/RksTLmzy/3a1c150e9e67.jpg",
+    "kategori": "İçecekler"
+  },
+  {
+    "_id": "11",
+    "ad": "Çay",
+    "fiyat": 15,
+    "img": "https://i.ibb.co/MHXkbc3/6446b8d1e8dd.jpg",
+    "kategori": "İçecekler"
+  }
+]
