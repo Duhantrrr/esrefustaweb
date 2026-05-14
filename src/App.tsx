@@ -92,27 +92,32 @@ function ProductCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="bg-white rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(137,76,92,0.05)] border border-brand-surface-container-high group"
+      className="bg-white rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(137,76,92,0.08)] border border-brand-surface-container-high group"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-surface-container">
         <img 
-          src={item.image} 
+          src={item.image || undefined} 
           alt={item.name} 
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
           loading="lazy"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute top-3 right-3 bg-brand-primary text-white px-3 py-1 rounded-lg font-bold text-sm shadow-md">
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-brand-primary px-3 py-1.5 rounded-xl font-black text-sm shadow-xl border border-brand-primary/10">
           {item.price} TL
         </div>
       </div>
-      <div className="p-5">
-        <h3 className="font-display font-bold text-xl text-brand-on-surface mb-2">
-          {item.name}
-        </h3>
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-display font-black text-xl text-brand-on-surface">
+            {item.name}
+          </h3>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-brand-outline bg-brand-surface-container px-2 py-1 rounded-md">
+            {item.category}
+          </span>
+        </div>
         
         {item.description && (
-          <p className="font-sans text-brand-on-surface-variant text-sm leading-relaxed mb-4 line-clamp-2">
+          <p className="font-sans text-brand-on-surface-variant text-sm leading-relaxed mb-4 line-clamp-2 opacity-80">
             {item.description}
           </p>
         )}
@@ -120,16 +125,21 @@ function ProductCard({
         <div className="flex gap-3 mt-4">
           <button 
             onClick={() => onAdd(item)}
-            className="flex-1 bg-brand-primary text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-md hover:shadow-lg"
+            className="flex-1 bg-brand-primary text-white font-bold py-3.5 rounded-2xl flex items-center justify-center space-x-2 active:scale-95 transition-all shadow-lg shadow-brand-primary/20 hover:shadow-xl hover:shadow-brand-primary/30"
           >
             <Plus size={18} />
-            <span>Ekle</span>
+            <span>Sepete Ekle</span>
           </button>
           
           {item.variants && item.variants.length > 0 && (
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="px-4 py-3 rounded-xl border border-brand-outline/20 text-brand-primary font-bold text-xs flex items-center gap-1 hover:bg-brand-surface-container transition-colors"
+              className={`
+                px-5 py-3.5 rounded-2xl border-2 font-black text-xs flex items-center gap-2 transition-all
+                ${isExpanded 
+                  ? 'bg-brand-primary border-brand-primary text-white' 
+                  : 'bg-white border-brand-primary/10 text-brand-primary hover:border-brand-primary/40'}
+              `}
             >
               <span>{isExpanded ? 'Kapat' : 'Çeşitler'}</span>
               <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
@@ -147,25 +157,30 @@ function ProductCard({
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="pt-6 mt-6 border-t border-brand-surface-container space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-outline mb-2">Lezzet Seçenekleri</p>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="pt-8 mt-6 border-t-2 border-dashed border-brand-surface-container">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-outline">Mevcut Lezzetler</p>
+                  <div className="h-[1px] flex-1 bg-brand-surface-container ml-4"></div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
                   {item.variants.map((v, i) => (
-                    <motion.div 
+                    <motion.button 
                       key={i}
+                      whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => onAdd({...item, name: `${item.name} (${v.name})`})}
-                      className="flex flex-col bg-brand-surface-container-high/40 p-2 rounded-lg cursor-pointer hover:bg-brand-primary-container/20 transition-colors border border-transparent hover:border-brand-primary/20"
+                      className="group relative flex items-center gap-2 bg-brand-surface-container/50 hover:bg-brand-primary hover:text-white px-4 py-2.5 rounded-full transition-all duration-300 border border-brand-primary/5 hover:border-brand-primary shadow-sm"
                     >
                       {v.image ? (
-                        <img src={v.image} alt={v.name} className="w-full aspect-square object-cover rounded-md mb-2" referrerPolicy="no-referrer" />
+                        <img src={v.image || undefined} alt={v.name} className="w-5 h-5 rounded-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-full aspect-square bg-brand-primary/10 rounded-md mb-2 flex items-center justify-center text-brand-primary/40">
-                          <Plus size={16} />
+                        <div className="w-5 h-5 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary group-hover:bg-white group-hover:text-brand-primary transition-colors">
+                          <Plus size={10} strokeWidth={3} />
                         </div>
                       )}
-                      <span className="text-[11px] font-bold text-center truncate">{v.name}</span>
-                    </motion.div>
+                      <span className="text-[11px] font-bold">{v.name}</span>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -281,11 +296,13 @@ function Sidebar({ isOpen, onClose, onAction }: { isOpen: boolean; onClose: () =
 function AdminPanel({ 
   items, 
   onUpdateItem,
+  onDeleteItem,
   onBack,
   categories
 }: { 
   items: MenuItem[]; 
   onUpdateItem: (updatedItem: MenuItem) => void;
+  onDeleteItem: (id: string) => void;
   onBack: () => void;
   categories: string[];
 }) {
@@ -484,24 +501,41 @@ function AdminPanel({
                   />
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={handleSave} className="flex-1 bg-brand-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                  <button onClick={handleSave} className="flex-1 bg-brand-primary text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2">
                     <Check size={18} /> Güncelle
                   </button>
-                  <button onClick={() => {setEditingId(null); setFormData({});}} className="px-6 py-3 bg-brand-surface-container text-brand-outline rounded-xl font-bold">
+                  <button onClick={() => {setEditingId(null); setFormData({});}} className="px-6 py-4 bg-brand-surface-container text-brand-outline rounded-xl font-bold">
                     İptal
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-4">
-                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl shadow-sm" referrerPolicy="no-referrer" />
+              <div className="flex items-center gap-4 group">
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl shadow-sm" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-16 h-16 bg-brand-surface-container rounded-xl flex items-center justify-center text-brand-outline">
+                    <Plus size={20} />
+                  </div>
+                )}
                 <div className="flex-1">
                   <h4 className="font-bold text-brand-on-surface">{item.name}</h4>
-                  <p className="text-sm font-bold text-brand-primary">{item.price} TL • {item.category}</p>
+                  <p className="text-xs font-bold text-brand-primary uppercase tracking-wider">{item.price} TL • {item.category}</p>
                 </div>
-                <button onClick={() => handleEdit(item)} className="p-3 bg-brand-surface-container rounded-xl text-brand-secondary">
-                  <Edit2 size={18} />
-                </button>
+                <div className="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleEdit(item)} 
+                    className="p-3 bg-brand-surface-container hover:bg-brand-primary-container/20 rounded-xl text-brand-secondary transition-colors"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button 
+                    onClick={() => window.confirm('Silmek istediğinize emin misiniz?') && onDeleteItem(item.id)} 
+                    className="p-3 bg-red-50 hover:bg-red-100 rounded-xl text-red-500 transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -546,7 +580,13 @@ function CartView({
           <div className="space-y-4 mb-8">
             {items.map((item) => (
               <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-brand-surface-container flex items-center gap-4">
-                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl" referrerPolicy="no-referrer" />
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-16 h-16 bg-brand-surface-container rounded-xl flex items-center justify-center text-brand-outline">
+                    <ShoppingBasket size={20} />
+                  </div>
+                )}
                 <div className="flex-1">
                   <h4 className="font-bold text-brand-on-surface text-sm">{item.name}</h4>
                   <p className="text-xs font-bold text-brand-primary">{item.price} TL</p>
@@ -729,6 +769,16 @@ export default function App() {
     }
   };
 
+  const handleDeleteItem = async (id: string) => {
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'products', id));
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      alert('Silme işlemi başarısız!');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-brand-background pb-32">
       <Sidebar 
@@ -818,6 +868,7 @@ export default function App() {
               <AdminPanel 
                 items={items} 
                 onUpdateItem={handleUpdateItem}
+                onDeleteItem={handleDeleteItem}
                 onBack={() => setActiveTab('menu')}
                 categories={categories}
               />

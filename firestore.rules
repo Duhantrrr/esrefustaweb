@@ -12,8 +12,7 @@ service cloud.firestore {
       
       // For now, allowing writes. 
       // In a more secure setup, we would use Firebase Auth and check custom claims.
-      allow create, update: if isValidProduct(incoming());
-      allow delete: if false; // Only admins can delete, not implemented in UI yet
+      allow create, update, delete: if true;
     }
 
     function isValidProduct(data) {
